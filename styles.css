@@ -156,6 +156,49 @@ button {
   min-width: 0;
 }
 
+.timer-card {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 8px 10px;
+}
+
+.timer-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.timer-card strong {
+  min-width: 56px;
+  color: var(--accent-dark);
+  font-size: 20px;
+  text-align: center;
+}
+
+.timer-card strong.urgent {
+  color: #b33a2e;
+}
+
+.timer-card strong.done {
+  color: #b33a2e;
+}
+
+.timer-card button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--accent-dark);
+  min-height: 34px;
+  padding: 0 10px;
+  font-weight: 800;
+}
+
 .back-button {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -192,7 +235,7 @@ button {
 .reading-nav {
   display: flex;
   gap: 8px;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .reading-nav button {
@@ -360,6 +403,21 @@ button {
   color: #fff;
 }
 
+.choice-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.time-up-note {
+  margin: 0;
+  border: 1px solid rgba(179, 58, 46, 0.28);
+  border-radius: 8px;
+  background: #fff1ee;
+  color: #9f2f25;
+  padding: 12px;
+  font-weight: 800;
+}
+
 .notes-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -410,5 +468,10 @@ textarea {
   .study-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .timer-card,
+  .reading-nav {
+    margin-left: 0;
   }
 }

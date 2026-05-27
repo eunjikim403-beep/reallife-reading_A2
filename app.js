@@ -13,9 +13,12 @@ const els = {
   questions: document.querySelector("#questionContainer"),
   summary: document.querySelector("#summaryNote"),
   vocab: document.querySelector("#vocabNote"),
+  timer: document.querySelector("#readingTimer"),
+  resetTimer: document.querySelector("#resetTimer"),
 };
 
 let currentId = "";
+let timerId = null;
 
 function getStore() {
   return JSON.parse(localStorage.getItem("toefl-reallife-a2") || "{}");
@@ -32,17 +35,94 @@ function getReading() {
 function getWork(readingId) {
   const store = getStore();
   if (!store[readingId]) {
-    store[readingId] = { answers: {}, summary: "", vocab: "" };
+    store[readingId] = { answers: {}, summary: "", vocab: "", timeRemaining: null, timeLimit: null, timedOut: false };
     setStore(store);
   }
+  store[readingId].answers = store[readingId].answers || {};
+  store[readingId].summary = store[readingId].summary || "";
+  store[readingId].vocab = store[readingId].vocab || "";
   return store[readingId];
 }
 
 function saveWork(readingId, updater) {
   const store = getStore();
-  store[readingId] = store[readingId] || { answers: {}, summary: "", vocab: "" };
+  store[readingId] = store[readingId] || { answers: {}, summary: "", vocab: "", timeRemaining: null, timeLimit: null, timedOut: false };
   updater(store[readingId]);
   setStore(store);
+}
+
+function timeLimitFor(reading) {
+  return Math.max(1, reading.questions.length || 0) * 60;
+}
+
+function formatTime(seconds) {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
+  const rest = String(safeSeconds % 60).padStart(2, "0");
+  return `${minutes}:${rest}`;
+}
+
+function stopTimer() {
+  clearInterval(timerId);
+  timerId = null;
+}
+
+function setTimerView(work) {
+  els.timer.textContent = formatTime(work.timeRemaining ?? 0);
+  els.timer.classList.toggle("urgent", (work.timeRemaining ?? 0) <= 30 && !work.timedOut);
+  els.timer.classList.toggle("done", Boolean(work.timedOut));
+  els.resetTimer.disabled = !currentId;
+}
+
+function prepareTimer(reading, work) {
+  const limit = timeLimitFor(reading);
+  if (work.timeLimit !== limit || typeof work.timeRemaining !== "number") {
+    saveWork(reading.id, (draft) => {
+      draft.timeLimit = limit;
+      draft.timeRemaining = limit;
+      draft.timedOut = false;
+    });
+    return getWork(reading.id);
+  }
+  return work;
+}
+
+function startTimer() {
+  stopTimer();
+  if (!currentId) return;
+  const reading = getReading();
+  const work = getWork(currentId);
+  setTimerView(work);
+  if (work.timedOut || work.timeRemaining <= 0) return;
+
+  timerId = setInterval(() => {
+    const latest = getWork(currentId);
+    latest.timeRemaining = Math.max(0, (latest.timeRemaining ?? timeLimitFor(reading)) - 1);
+    latest.timedOut = latest.timeRemaining <= 0;
+    saveWork(currentId, (draft) => {
+      draft.timeLimit = latest.timeLimit ?? timeLimitFor(reading);
+      draft.timeRemaining = latest.timeRemaining;
+      draft.timedOut = latest.timedOut;
+    });
+    setTimerView(latest);
+    if (latest.timedOut) {
+      stopTimer();
+      renderQuestions(reading, getWork(currentId));
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  if (!currentId) return;
+  const reading = getReading();
+  const limit = timeLimitFor(reading);
+  saveWork(currentId, (draft) => {
+    draft.timeLimit = limit;
+    draft.timeRemaining = limit;
+    draft.timedOut = false;
+  });
+  renderQuestions(reading, getWork(currentId));
+  startTimer();
 }
 
 function renderMenu() {
@@ -79,7 +159,7 @@ function updateReadingNav() {
 function openReading(readingId) {
   currentId = readingId;
   const reading = getReading();
-  const work = getWork(readingId);
+  const work = prepareTimer(reading, getWork(readingId));
 
   els.title.textContent = reading.title;
   els.summary.value = work.summary || "";
@@ -90,6 +170,7 @@ function openReading(readingId) {
 
   els.menuPage.classList.add("hidden");
   els.studyPage.classList.remove("hidden");
+  startTimer();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -200,6 +281,13 @@ function renderQuestions(reading, work) {
     return;
   }
 
+  if (work.timedOut || work.timeRemaining <= 0) {
+    const notice = document.createElement("p");
+    notice.className = "time-up-note";
+    notice.textContent = "제한시간이 끝났습니다. 다시 풀려면 타이머를 다시 시작하세요.";
+    els.questions.appendChild(notice);
+  }
+
   reading.questions.forEach((question, index) => {
     const parsed = parseQuestion(question);
     const card = document.createElement("article");
@@ -236,7 +324,9 @@ function renderQuestions(reading, work) {
       const button = document.createElement("button");
       button.textContent = choice;
       button.className = work.answers[index] === choice ? "selected" : "";
+      button.disabled = work.timedOut || work.timeRemaining <= 0;
       button.addEventListener("click", () => {
+        if (work.timedOut || work.timeRemaining <= 0) return;
         saveWork(reading.id, (draft) => {
           draft.answers[index] = choice;
         });
@@ -253,6 +343,7 @@ function renderQuestions(reading, work) {
 els.search.addEventListener("input", renderMenu);
 
 els.menu.addEventListener("click", () => {
+  stopTimer();
   els.studyPage.classList.add("hidden");
   els.menuPage.classList.remove("hidden");
   renderMenu();
@@ -260,6 +351,7 @@ els.menu.addEventListener("click", () => {
 
 els.prev.addEventListener("click", () => moveReading(-1));
 els.next.addEventListener("click", () => moveReading(1));
+els.resetTimer.addEventListener("click", resetTimer);
 
 els.summary.addEventListener("input", () => {
   if (!currentId) return;
