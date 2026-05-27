@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TOEFL Reading Lab</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section id="menuPage" class="menu-page">
+        <div class="site-brand">스마트토플 김은지</div>
+        <header class="hero">
+          <p>실생활 리딩 A2</p>
+          <h1>TOEFL Reading Lab</h1>
+        </header>
+
+        <label class="search-box">
+          <span>리딩 검색</span>
+          <input id="searchInput" type="search" placeholder="번호나 제목을 입력하세요">
+        </label>
+
+        <div id="readingList" class="reading-list"></div>
+      </section>
+
+      <section id="studyPage" class="study-page hidden">
+        <div class="site-brand">스마트토플 김은지</div>
+        <header class="study-header">
+          <button id="menuButton" class="back-button">← 리딩 메뉴</button>
+          <div>
+            <p>Reading</p>
+            <h2 id="readingTitle"></h2>
+          </div>
+          <div class="reading-nav">
+            <button id="prevReading" type="button">Back</button>
+            <button id="nextReading" type="button">Next</button>
+          </div>
+        </header>
+
+        <div class="study-grid">
+          <section class="panel passage-panel">
+            <h3>지문</h3>
+            <div id="passageContainer" class="passage-container"></div>
+          </section>
+
+          <section class="panel question-panel">
+            <h3>문제</h3>
+            <div id="questionContainer" class="question-container"></div>
+
+            <div class="notes-grid">
+              <label class="note-box">
+                <span>노트</span>
+                <textarea id="summaryNote" rows="5" placeholder="수업 중 메모나 핵심 내용을 적으세요."></textarea>
+              </label>
+
+              <label class="note-box">
+                <span>어휘</span>
+                <textarea id="vocabNote" rows="5" placeholder="단어 = 의미 / 지문 속 단서를 적으세요."></textarea>
+              </label>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="reading-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
